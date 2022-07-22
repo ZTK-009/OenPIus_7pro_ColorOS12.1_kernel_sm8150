@@ -54,6 +54,10 @@
 #define DASH_VALID_TEMP_LOW_THRESHOLD	125
 #define DASH_VALID_TEMP_HIG_THRESHOLD	430
 
+#ifdef CONFIG_OP_PASSTHROUGH_HACK
+#include <linux/passthroughhack.h>
+#endif
+
 struct smb_charger *g_chg;
 struct regmap *pm_regmap;
 
@@ -7968,6 +7972,9 @@ static void set_usb_switch(struct smb_charger *chg, bool enable)
 		}
 	}
 
+	if (passthrough_hack > 0)
+		return;
+	
 	if (enable) {
 		pr_debug("switch on fastchg\n");
 		chg->switch_on_fastchg = true;
