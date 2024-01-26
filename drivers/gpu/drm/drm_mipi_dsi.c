@@ -305,6 +305,7 @@ static int mipi_dsi_remove_device_fn(struct device *dev, void *priv)
 {
 	struct mipi_dsi_device *dsi = to_mipi_dsi_device(dev);
 
+	mipi_dsi_detach(dsi);
 	mipi_dsi_device_unregister(dsi);
 
 	return 0;
@@ -1119,14 +1120,14 @@ EXPORT_SYMBOL(mipi_dsi_dcs_set_display_brightness_samsung);
 int mipi_dsi_dcs_write_c1(struct mipi_dsi_device *dsi,
 						u16 read_number)
 {
-	u8 payload[3] = {0x0A, read_number >> 8, read_number & 0xff};
-	ssize_t err;
+		u8 payload[3] = {0x0A, read_number >> 8, read_number & 0xff};
+		ssize_t err;
 
-	err = mipi_dsi_dcs_write(dsi, 0xC1,payload, sizeof(payload));
-	if (err < 0)
-		return err;
+		err = mipi_dsi_dcs_write(dsi, 0xC1,payload, sizeof(payload));
+		if (err < 0)
+			return err;
 
-	return 0;
+		return 0;
 }
 EXPORT_SYMBOL(mipi_dsi_dcs_write_c1);
 
