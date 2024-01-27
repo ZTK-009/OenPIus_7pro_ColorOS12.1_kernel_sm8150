@@ -1324,6 +1324,9 @@ extern int send_sigurg(struct fown_struct *fown);
 #define sb_has_enc_strict_mode(sb) \
 	(sb->s_encoding_flags & SB_ENC_STRICT_MODE_FL)
 
+#define sb_has_strict_encoding(sb) \
+	(sb->s_encoding_flags & SB_ENC_STRICT_MODE_FL)
+	
 /*
  *	Umount options
  */
@@ -1672,6 +1675,9 @@ struct fiemap_extent_info {
 	struct fiemap_extent __user *fi_extents_start; /* Start of
 							fiemap_extent array */
 };
+
+int fiemap_prep(struct inode *inode, struct fiemap_extent_info *fieinfo,
+		u64 start, u64 *len, u32 supported_flags);
 int fiemap_fill_next_extent(struct fiemap_extent_info *info, u64 logical,
 			    u64 phys, u64 len, u32 flags);
 int fiemap_check_flags(struct fiemap_extent_info *fieinfo, u32 fs_flags);
@@ -2138,6 +2144,8 @@ static inline void file_accessed(struct file *file)
 	if (!(file->f_flags & O_NOATIME))
 		touch_atime(&file->f_path);
 }
+
+extern int file_modified(struct file *file);
 
 int sync_inode(struct inode *inode, struct writeback_control *wbc);
 int sync_inode_metadata(struct inode *inode, int wait);
@@ -2772,9 +2780,16 @@ static inline ssize_t generic_write_sync(struct kiocb *iocb, ssize_t count)
 
 extern void emergency_sync(void);
 extern void emergency_remount(void);
+
 #ifdef CONFIG_BLOCK
-extern sector_t bmap(struct inode *, sector_t);
+extern int bmap(struct inode *inode, sector_t *block);
+#else
+static inline int bmap(struct inode *inode,  sector_t *block)
+{
+	return -EINVAL;
+}
 #endif
+
 extern int notify_change(struct dentry *, struct iattr *, struct inode **);
 extern int notify_change2(struct vfsmount *, struct dentry *, struct iattr *, struct inode **);
 extern int inode_permission(struct inode *, int);
@@ -3241,9 +3256,6 @@ extern int generic_file_fsync(struct file *, loff_t, loff_t, int);
 extern int generic_check_addressable(unsigned, u64);
 
 #ifdef CONFIG_UNICODE
-extern int generic_ci_d_hash(const struct dentry *dentry, struct qstr *str);
-extern int generic_ci_d_compare(const struct dentry *dentry, unsigned int len,
-				const char *str, const struct qstr *name);
 extern bool needs_casefold(const struct inode *dir);
 #else
 static inline bool needs_casefold(const struct inode *dir)
@@ -3251,8 +3263,7 @@ static inline bool needs_casefold(const struct inode *dir)
 	return 0;
 }
 #endif
-extern void generic_set_encrypted_ci_d_ops(struct inode *dir,
-					   struct dentry *dentry);
+extern void generic_set_encrypted_ci_d_ops(struct dentry *dentry);
 
 #ifdef CONFIG_MIGRATION
 extern int buffer_migrate_page(struct address_space *,

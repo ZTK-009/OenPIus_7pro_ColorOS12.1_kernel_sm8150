@@ -2520,9 +2520,9 @@ extern int __ext4_check_dir_entry(const char *, unsigned int, struct inode *,
 				  struct ext4_dir_entry_2 *,
 				  struct buffer_head *, char *, int,
 				  unsigned int);
-#define ext4_check_dir_entry(dir, filp, de, bh, buf, size, offset) \
+#define ext4_check_dir_entry(dir, filp, de, bh, buf, size, offset)	\
 	unlikely(__ext4_check_dir_entry(__func__, __LINE__, (dir), (filp), \
-				(de), (bh), (buf), (size), (offset)))
+					(de), (bh), (buf), (size), (offset)))
 extern int ext4_htree_store_dirent(struct file *dir_file, __u32 hash,
 				__u32 minor_hash,
 				struct ext4_dir_entry_2 *dirent,
@@ -3158,10 +3158,6 @@ static inline void ext4_unlock_group(struct super_block *sb,
 
 /* dir.c */
 extern const struct file_operations ext4_dir_operations;
-
-#ifdef CONFIG_UNICODE
-extern const struct dentry_operations ext4_dentry_ops;
-#endif
 
 /* file.c */
 extern const struct inode_operations ext4_file_inode_operations;

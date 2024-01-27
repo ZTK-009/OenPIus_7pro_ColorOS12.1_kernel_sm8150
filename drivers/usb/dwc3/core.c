@@ -1517,16 +1517,13 @@ static int dwc3_remove(struct platform_device *pdev)
 	res->start -= DWC3_GLOBALS_REGS_START;
 
 	dwc3_debugfs_exit(dwc);
-<<<<<<< HEAD
 	dwc3_gadget_exit(dwc);
-=======
-
 	dwc3_core_exit(dwc);
 	dwc3_ulpi_exit(dwc);
-
->>>>>>> c31e35278ea8f04f1dceadd77dca4dd7d47932a3
 	pm_runtime_allow(&pdev->dev);
 	pm_runtime_disable(&pdev->dev);
+	pm_runtime_put_noidle(&pdev->dev);
+	pm_runtime_set_suspended(&pdev->dev);
 
 	dwc3_free_event_buffers(dwc);
 	dwc3_free_scratch_buffers(dwc);
