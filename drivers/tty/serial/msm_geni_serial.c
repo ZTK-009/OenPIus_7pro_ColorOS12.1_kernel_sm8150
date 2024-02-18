@@ -3892,6 +3892,7 @@ EXPORT_SYMBOL(msm_serial_oem_pinctrl_init);
 
 #define SERIAL_CMDLINE "ttyMSM0,115200n8"
 char oem_force_cmdline_str[60];
+int force_oem_console_setup(char *str);
 
 int msm_serial_oem_init(void)
 {
