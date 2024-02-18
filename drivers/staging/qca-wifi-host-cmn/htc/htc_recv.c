@@ -27,41 +27,41 @@
 #if defined(WLAN_DEBUG) || defined(DEBUG)
 void debug_dump_bytes(uint8_t *buffer, uint16_t length, char *pDescription)
 {
-	int8_t stream[60];
-	int8_t byteOffsetStr[10];
-	uint32_t i;
-	uint16_t offset, count, byteOffset;
+	// int8_t stream[60];
+	// int8_t byteOffsetStr[10];
+	// uint32_t i;
+	// uint16_t offset, count, byteOffset;
 
-	A_PRINTF("<---------Dumping %d Bytes : %s ------>\n", length,
-		 pDescription);
+	// A_PRINTF("<---------Dumping %d Bytes : %s ------>\n", length,
+	// 	 pDescription);
 
-	count = 0;
-	offset = 0;
-	byteOffset = 0;
-	for (i = 0; i < length; i++) {
-		A_SNPRINTF(stream + offset, (sizeof(stream) - offset),
-			   "%02X ", buffer[i]);
-		count++;
-		offset += 3;
+	// count = 0;
+	// offset = 0;
+	// byteOffset = 0;
+	// for (i = 0; i < length; i++) {
+	// 	A_SNPRINTF(stream + offset, (sizeof(stream) - offset),
+	// 		   "%02X ", buffer[i]);
+	// 	count++;
+	// 	offset += 3;
 
-		if (count == 16) {
-			count = 0;
-			offset = 0;
-			A_SNPRINTF(byteOffsetStr, sizeof(byteOffset), "%4.4X",
-				   byteOffset);
-			A_PRINTF("[%s]: %s\n", byteOffsetStr, stream);
-			qdf_mem_zero(stream, 60);
-			byteOffset += 16;
-		}
-	}
+	// 	if (count == 16) {
+	// 		count = 0;
+	// 		offset = 0;
+	// 		A_SNPRINTF(byteOffsetStr, sizeof(byteOffset), "%4.4X",
+	// 			   byteOffset);
+	// 		A_PRINTF("[%s]: %s\n", byteOffsetStr, stream);
+	// 		qdf_mem_zero(stream, 60);
+	// 		byteOffset += 16;
+	// 	}
+	// }
 
-	if (offset != 0) {
-		A_SNPRINTF(byteOffsetStr, sizeof(byteOffset), "%4.4X",
-			   byteOffset);
-		A_PRINTF("[%s]: %s\n", byteOffsetStr, stream);
-	}
+	// if (offset != 0) {
+	// 	A_SNPRINTF(byteOffsetStr, sizeof(byteOffset), "%4.4X",
+	// 		   byteOffset);
+	// 	A_PRINTF("[%s]: %s\n", byteOffsetStr, stream);
+	// }
 
-	A_PRINTF("<------------------------------------------------->\n");
+	// A_PRINTF("<------------------------------------------------->\n");
 }
 #else
 void debug_dump_bytes(uint8_t *buffer, uint16_t length, char *pDescription)
@@ -280,9 +280,9 @@ QDF_STATUS htc_rx_completion_handler(void *Context, qdf_nbuf_t netbuf,
 			AR_DEBUG_PRINTF(ATH_DEBUG_ERR,
 					("HTC Rx: invalid EndpointID=%d\n",
 					 htc_ep_id));
-			debug_dump_bytes((uint8_t *) HtcHdr,
-					sizeof(HTC_FRAME_HDR),
-					"BAD HTC Header");
+			// debug_dump_bytes((uint8_t *) HtcHdr,
+			// 		sizeof(HTC_FRAME_HDR),
+			// 		"BAD HTC Header");
 			status = QDF_STATUS_E_FAILURE;
 			DPTRACE(qdf_dp_trace(
 					    netbuf,
@@ -331,9 +331,9 @@ QDF_STATUS htc_rx_completion_handler(void *Context, qdf_nbuf_t netbuf,
 			AR_DEBUG_PRINTF(ATH_DEBUG_ERR,
 					("HTC Rx: insufficient length, got:%d expected =%zu\n",
 					 netlen, payloadLen + HTC_HDR_LENGTH));
-			debug_dump_bytes((uint8_t *) HtcHdr,
-					 sizeof(HTC_FRAME_HDR),
-					 "BAD RX packet length");
+			// debug_dump_bytes((uint8_t *) HtcHdr,
+			// 		 sizeof(HTC_FRAME_HDR),
+			// 		 "BAD RX packet length");
 			status = QDF_STATUS_E_FAILURE;
 			DPTRACE(qdf_dp_trace(
 					    netbuf,
@@ -720,7 +720,7 @@ static A_STATUS htc_process_trailer(HTC_TARGET *target,
 	}
 
 	if (A_FAILED(status))
-		debug_dump_bytes(pOrigBuffer, origLength, "BAD Recv Trailer");
+		// debug_dump_bytes(pOrigBuffer, origLength, "BAD Recv Trailer");
 
 	AR_DEBUG_PRINTF(ATH_DEBUG_RECV, ("-htc_process_trailer\n"));
 	return status;
