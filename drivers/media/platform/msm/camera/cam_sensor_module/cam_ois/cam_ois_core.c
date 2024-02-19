@@ -129,7 +129,7 @@ typedef struct {
 //**************************
 //	define
 //**************************
-#define 	ONE_MSEC_COUNT	18			// 18.0288kHz * 18 ¡§P 1ms
+#define 	ONE_MSEC_COUNT	18			// 18.0288kHz * 18 ï¿½ï¿½P 1ms
 
 //#define 	HALL_ADJ		0
 #define 	LOOPGAIN		1

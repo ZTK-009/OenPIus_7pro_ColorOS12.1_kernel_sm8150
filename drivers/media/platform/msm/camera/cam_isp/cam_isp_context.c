@@ -2313,7 +2313,6 @@ static int __cam_isp_ctx_rdi_only_sof_in_bubble_applied(
 		notify.req_id = req->request_id;
 		notify.error = CRM_KMD_ERR_BUBBLE;
 		ctx->ctx_crm_intf->notify_err(&notify);
-		atomic_set(&ctx_isp->process_bubble, 1);
 		CAM_INFO(CAM_ISP, "Notify CRM about Bubble frame %lld",
 			ctx_isp->frame_id);
 	} else {
