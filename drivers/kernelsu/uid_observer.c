@@ -20,18 +20,16 @@ static struct work_struct ksu_update_uid_work;
 struct uid_data {
 	struct list_head list;
 	u32 uid;
-	char package[KSU_MAX_PACKAGE_NAME];
 };
 
-static bool is_uid_exist(uid_t uid, char *package, void *data)
+static bool is_uid_exist(uid_t uid, void *data)
 {
 	struct list_head *list = (struct list_head *)data;
 	struct uid_data *np;
 
 	bool exist = false;
 	list_for_each_entry (np, list, list) {
-		if (np->uid == uid % 100000 &&
-		    strncmp(np->package, package, KSU_MAX_PACKAGE_NAME) == 0) {
+		if (np->uid == uid % 100000) {
 			exist = true;
 			break;
 		}
@@ -41,11 +39,10 @@ static bool is_uid_exist(uid_t uid, char *package, void *data)
 
 static void do_update_uid(struct work_struct *work)
 {
-	struct file *fp =
-		ksu_filp_open_compat(SYSTEM_PACKAGES_LIST_PATH, O_RDONLY, 0);
+	struct file *fp = ksu_filp_open_compat(SYSTEM_PACKAGES_LIST_PATH, O_RDONLY, 0);
 	if (IS_ERR(fp)) {
 		pr_err("do_update_uid, open " SYSTEM_PACKAGES_LIST_PATH
-		       " failed: %ld\n",
+		       " failed: %d\n",
 		       PTR_ERR(fp));
 		return;
 	}
@@ -76,10 +73,10 @@ static void do_update_uid(struct work_struct *work)
 
 		char *tmp = buf;
 		const char *delim = " ";
-		char *package = strsep(&tmp, delim);
+		strsep(&tmp, delim); // skip package
 		char *uid = strsep(&tmp, delim);
-		if (!uid || !package) {
-			pr_err("update_uid: package or uid is NULL!\n");
+		if (!uid) {
+			pr_err("update_uid: uid is NULL!\n");
 			continue;
 		}
 
@@ -89,7 +86,6 @@ static void do_update_uid(struct work_struct *work)
 			continue;
 		}
 		data->uid = res;
-		strncpy(data->package, package, KSU_MAX_PACKAGE_NAME);
 		list_add_tail(&data->list, &uid_list);
 		// reset line start
 		line_start = pos;

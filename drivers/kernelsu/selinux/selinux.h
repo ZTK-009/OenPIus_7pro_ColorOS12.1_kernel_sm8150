@@ -16,8 +16,6 @@ bool getenforce();
 
 bool is_ksu_domain();
 
-bool is_zygote(void *cred);
-
 void apply_kernelsu_rules();
 
 #endif

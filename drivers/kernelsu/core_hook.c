@@ -123,11 +123,8 @@ void escape_to_root(void)
 	BUILD_BUG_ON(sizeof(profile->capabilities.effective) !=
 		     sizeof(kernel_cap_t));
 
-	// setup capabilities
-	// we need CAP_DAC_READ_SEARCH becuase `/data/adb/ksud` is not accessible for non root process
-	// we add it here but don't add it to cap_inhertiable, it would be dropped automaticly after exec!
-	u64 cap_for_ksud = profile->capabilities.effective | CAP_DAC_READ_SEARCH;
-	memcpy(&cred->cap_effective, &cap_for_ksud,
+	// capabilities
+	memcpy(&cred->cap_effective, &profile->capabilities.effective,
 	       sizeof(cred->cap_effective));
 	memcpy(&cred->cap_inheritable, &profile->capabilities.effective,
 	       sizeof(cred->cap_inheritable));
@@ -236,8 +233,7 @@ int ksu_handle_prctl(int option, unsigned long arg2, unsigned long arg3,
 		// someone wants to be root manager, just check it!
 		// arg3 should be `/data/user/<userId>/<manager_package_name>`
 		char param[128];
-		if (ksu_strncpy_from_user_nofault(param, arg3, sizeof(param)) ==
-		    -EFAULT) {
+		if (ksu_strncpy_from_user_nofault(param, arg3, sizeof(param)) == -EFAULT) {
 #ifdef CONFIG_KSU_DEBUG
 			pr_err("become_manager: copy param err\n");
 #endif
@@ -289,7 +285,7 @@ int ksu_handle_prctl(int option, unsigned long arg2, unsigned long arg3,
 
 	if (arg2 == CMD_GRANT_ROOT) {
 		if (is_allow_su()) {
-			pr_info("allow root for: %d\n", current_uid().val);
+			pr_info("allow root for: %d\n", current_uid());
 			escape_to_root();
 			if (copy_to_user(result, &reply_ok, sizeof(reply_ok))) {
 				pr_err("grant_root: prctl reply error\n");
@@ -303,7 +299,7 @@ int ksu_handle_prctl(int option, unsigned long arg2, unsigned long arg3,
 		if (is_manager() || 0 == current_uid().val) {
 			u32 version = KERNEL_SU_VERSION;
 			if (copy_to_user(arg3, &version, sizeof(version))) {
-				pr_err("prctl reply error, cmd: %lu\n", arg2);
+				pr_err("prctl reply error, cmd: %d\n", arg2);
 			}
 		}
 		return 0;
@@ -377,7 +373,7 @@ int ksu_handle_prctl(int option, unsigned long arg2, unsigned long arg3,
 						  sizeof(u32) * array_length)) {
 					if (copy_to_user(result, &reply_ok,
 							 sizeof(reply_ok))) {
-						pr_err("prctl reply error, cmd: %lu\n",
+						pr_err("prctl reply error, cmd: %d\n",
 						       arg2);
 					}
 				} else {
@@ -397,16 +393,16 @@ int ksu_handle_prctl(int option, unsigned long arg2, unsigned long arg3,
 			} else if (arg2 == CMD_UID_SHOULD_UMOUNT) {
 				allow = ksu_uid_should_umount(target_uid);
 			} else {
-				pr_err("unknown cmd: %lu\n", arg2);
+				pr_err("unknown cmd: %d\n", arg2);
 			}
 			if (!copy_to_user(arg4, &allow, sizeof(allow))) {
 				if (copy_to_user(result, &reply_ok,
 						 sizeof(reply_ok))) {
-					pr_err("prctl reply error, cmd: %lu\n",
+					pr_err("prctl reply error, cmd: %d\n",
 					       arg2);
 				}
 			} else {
-				pr_err("prctl copy err, cmd: %lu\n", arg2);
+				pr_err("prctl copy err, cmd: %d\n", arg2);
 			}
 		}
 		return 0;
@@ -433,7 +429,7 @@ int ksu_handle_prctl(int option, unsigned long arg2, unsigned long arg3,
 				return 0;
 			}
 			if (copy_to_user(result, &reply_ok, sizeof(reply_ok))) {
-				pr_err("prctl reply error, cmd: %lu\n", arg2);
+				pr_err("prctl reply error, cmd: %d\n", arg2);
 			}
 		}
 		return 0;
@@ -449,7 +445,7 @@ int ksu_handle_prctl(int option, unsigned long arg2, unsigned long arg3,
 		// todo: validate the params
 		if (ksu_set_app_profile(&profile, true)) {
 			if (copy_to_user(result, &reply_ok, sizeof(reply_ok))) {
-				pr_err("prctl reply error, cmd: %lu\n", arg2);
+				pr_err("prctl reply error, cmd: %d\n", arg2);
 			}
 		}
 		return 0;
@@ -487,8 +483,7 @@ static bool should_umount(struct path *path)
 	return false;
 }
 
-static void ksu_umount_mnt(struct path *path, int flags)
-{
+static void ksu_umount_mnt(struct path *path, int flags) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 9, 0)
 	int err = path_umount(path, flags);
 	if (err) {
@@ -504,11 +499,6 @@ static void try_umount(const char *mnt, bool check_mnt, int flags)
 	struct path path;
 	int err = kern_path(mnt, 0, &path);
 	if (err) {
-		return;
-	}
-
-	if (path.dentry != path.mnt->mnt_root) {
-		// it is not root mountpoint, maybe umounted by others already.
 		return;
 	}
 
@@ -534,6 +524,8 @@ int ksu_handle_setuid(struct cred *new, const struct cred *old)
 		return 0;
 	}
 
+	// todo: check old process's selinux context, if it is not zygote, ignore it!
+
 	if (!is_appuid(new_uid) || is_isolated_uid(new_uid.val)) {
 		// pr_info("handle setuid ignore non application or isolated uid: %d\n", new_uid.val);
 		return 0;
@@ -552,16 +544,8 @@ int ksu_handle_setuid(struct cred *new, const struct cred *old)
 #endif
 	}
 
-	// check old process's selinux context, if it is not zygote, ignore it!
-	// because some su apps may setuid to untrusted_app but they are in global mount namespace
-	// when we umount for such process, that is a disaster!
-	bool is_zygote_child = is_zygote(old->security);
-	if (!is_zygote_child) {
-		pr_info("handle umount ignore non zygote child: %d\n", current->pid);
-		return 0;
-	}
 	// umount the target mnt
-	pr_info("handle umount for uid: %d, pid: %d\n", new_uid.val, current->pid);
+	pr_info("handle umount for uid: %d\n", new_uid.val);
 
 	// fixme: use `collect_mounts` and `iterate_mount` to iterate all mountpoint and
 	// filter the mountpoint whose target is `/data/adb`
